@@ -24,8 +24,8 @@ void SerialPrintComma(T t, Args... args) {
 double theta_min[3] ={deg_to_rad(0),deg_to_rad(0),deg_to_rad(0)};
 double theta_max[3] ={deg_to_rad(175),deg_to_rad(175),deg_to_rad(175)};
 
-double m_of_theta_min[3]={650,650,752}; //
-double m_of_theta_max[3]={2485,2421,2401}; //
+double m_of_theta_min[3]={650,650,650}; //
+double m_of_theta_max[3]={2485,2485,2485}; //
 const byte NumServos = 3;
 float vmax[NumServos] = { 4, 4, 4};          // max change in p per step
 float amax[NumServos] = {1.5, 1.5, 1.5};   // max change in v per step
@@ -35,9 +35,9 @@ const double rb = 0.185;
 const double L1 = 0.142;
 const double L2 = 0.12;
 const float InitialPosition[NumServos] = {
-  28.3,
-  23.7,
-  22
+  37.5,
+  27,
+  38
 };
 const float origin_servo_angle[3]={deg_to_rad(99.63),deg_to_rad(99.63),deg_to_rad(99.63)};
 

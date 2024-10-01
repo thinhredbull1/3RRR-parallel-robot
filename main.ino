@@ -1,14 +1,7 @@
 #include <Servo.h>
 #include "config.h"
-Servo sv1;
-Servo sv2;
-Servo sv3;
-Servo* myservo[] = {
-  &sv1,
-  &sv2,
-  &sv3
-};
 
+Servo myservo[3];  //creates 3 servo objects
 double px = 0.0;
 double py = 0.0;
 double theta = 0.0;
@@ -73,7 +66,7 @@ void MoveServos() {
     p[servo] = constrain(p[servo], rad_to_deg(theta_min[servo]), rad_to_deg(theta_max[servo]));
     float microsec_now = interpolate(deg_to_rad(p[servo]), theta_min[servo], theta_max[servo], m_of_theta_min[servo], m_of_theta_max[servo]);  //interpolates
     // if (servo == 1) PRINT_SERIAL_COMMA(p[servo], microsec_now);
-    myservo[servo]->writeMicroseconds((int)microsec_now);
+    myservo[servo].writeMicroseconds((int)microsec_now);
     // pwm.setPWM(servo, 0, cvt_angle(p[servo]));
     //Serial.println("servo[" + String(servo) + "]:" + String(p[servo]));
   }
@@ -138,26 +131,30 @@ coordinate Serial_process() {
     int index_now = c.indexOf("/");
     if (index_now != -1) {
       int index_cal = c.indexOf("#");
-      result.x = c.substring(0, index_now).toFloat();
-      result.y = c.substring(index_now + 1, index_cal).toFloat();
-      result.theta = c.substring(index_cal + 1).toFloat();
-      Serial.print("coord:");
-      PRINT_SERIAL_COMMA(result.x, result.y, result.theta);
-      Serial.print("angle:");
-      InvKinRRR(result.x, result.y, deg_to_rad(result.theta));
-      PRINT_SERIAL_COMMA(target[0], target[1], target[2]);
+      // result.x = c.substring(0, index_now).toFloat();
+      // result.y = c.substring(index_now + 1, index_cal).toFloat();
+      // result.theta = c.substring(index_cal + 1).toFloat();
+      // Serial.print("coord:");
+      // PRINT_SERIAL_COMMA(result.x, result.y, result.theta);
+      // Serial.print("angle:");
+      // InvKinRRR(result.x, result.y, deg_to_rad(result.theta));
+      // PRINT_SERIAL_COMMA(target[0], target[1], target[2]);
+      int sv_ind = c.substring(0, index_now).toInt();
+      angle = c.substring(index_now + 1, index_cal).toFloat();
+      microsec = interpolate(deg_to_rad(angle), theta_min[sv_ind], theta_max[sv_ind], m_of_theta_min[sv_ind], m_of_theta_max[sv_ind]);  //interpolates
+      myservo[sv_ind].writeMicroseconds((int)microsec);
     }
   }
   return result;
 }
 void setup() {
   Serial.begin(9600);
-  sv1.attach(D4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-  sv2.attach(D5, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
-  sv3.attach(D6, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+  myservo[0].attach(D4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+  myservo[1].attach(D5, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+  myservo[2].attach(D6, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
   for (int i = 0; i < 3; i++) {
     float microsec_now = cvt_to_micro(InitialPosition[i], i);  //interpolates  '
-    myservo[i]->writeMicroseconds(microsec_now);
+    myservo[i].writeMicroseconds(microsec_now);
     p[i] = InitialPosition[i];
     target[i] = InitialPosition[i];
     home_offset_angle[i] = origin_servo_angle[i] - deg_to_rad(InitialPosition[i]);
@@ -165,16 +162,55 @@ void setup() {
 }
 void loop() {
   // Serial_process();
+  // static double theta_r = 0;
+  // run_every(1) {
+  //   theta_r += M_PI / 1440.0;
+  //   if (theta_r >= 2 * M_PI) theta_r = 0;
+  //   //defines desired x and y postions
+  //   px = 0.015 * cos(theta_r);
+  //   py = 0.015 * sin(theta_r);
+  //   //calculates q1, q2, and q3 given px, py, and theta
+  //   InvKinRRR(px, py, 0);
+
+  // }
+  // MoveServos();
+
   static double theta_r = 0;
-  run_every(20) {
-    theta_r += M_PI / 360.0;
-    if (theta_r >= 2 * M_PI) theta_r = 0;
-    //defines desired x and y postions
-    px = 0.015 * cos(theta_r);
-    py = 0.015 * sin(theta_r);
-    //calculates q1, q2, and q3 given px, py, and theta
+
+  //defines epicycloid parameters
+  float r = 0.005;
+  float k = 2.1;
+  int count_ = 0;
+
+  unsigned long time_ = millis();
+  int m[3];
+  run_every(50) {
+    //defines desired x and y position of robot
+    theta_r += M_PI / 720.0;
+    if (theta_r >= 44 * M_PI) {
+      theta_r = 0;
+      Serial.println("done");
+    }
+    px = r * (k + 1) * cos(theta_r) - r * cos((k + 1) * theta_r);
+    py = r * (k + 1) * sin(theta_r) - r * sin((k + 1) * theta_r);
     InvKinRRR(px, py, 0);
+    m[0] = (int)interpolate(deg_to_rad(target[0]), theta_min[0], theta_max[0], m_of_theta_min[0], m_of_theta_max[0]);
+    m[1] = (int)interpolate(deg_to_rad(target[1]), theta_min[1], theta_max[1], m_of_theta_min[1], m_of_theta_max[1]);
+    m[2] = (int)interpolate(deg_to_rad(target[2]), theta_min[2], theta_max[2], m_of_theta_min[2], m_of_theta_max[2]);
+    if (out_of_reach == 0) {
+
+      //moves servos
+      myservo[0].writeMicroseconds(m[0]);
+      myservo[1].writeMicroseconds(m[1]);
+      myservo[2].writeMicroseconds(m[2]);  // waits for the servo
+    }
+
+    Serial.println(theta_r);
+
+    //determines microsecond delays from q1, q2, and q3
   }
-  MoveServos();
-  // run_every(100)
+
+
+  // delay(1);
+  // run_every(100) PRINT_SERIAL_COMMA(angle,microsec);
 }
