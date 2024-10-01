@@ -1,10 +1,8 @@
-#define MIN_PULSE_WIDTH 500
-#define MAX_PULSE_WIDTH 2600
-#define DEFAULT_PULSE_WIDTH 1500
-#define REFRESE_INTERVAL 20000
-#define servo1 0
-#define servo2 1
-#define servo3 2
+#define MIN_PULSE 500
+#define MAX_PULSE 2600
+
+#define TIMER_INTERRUPT_DEBUG       0
+#define ISR_SERVO_DEBUG             0
 #define PRINT_SERIAL_COMMA(...) SerialPrintComma(__VA_ARGS__)
 #define rad_to_deg(x) x * 180.0 / M_PI
 #define deg_to_rad(x) (M_PI/180.0)*x
@@ -23,7 +21,7 @@ void SerialPrintComma(T t, Args... args) {
 }
 double theta_min[3] ={deg_to_rad(0),deg_to_rad(0),deg_to_rad(0)};
 double theta_max[3] ={deg_to_rad(175),deg_to_rad(175),deg_to_rad(175)};
-
+const int servo_pin[3]={D4,D5,D6};
 double m_of_theta_min[3]={650,650,650}; //
 double m_of_theta_max[3]={2485,2485,2485}; //
 const byte NumServos = 3;
