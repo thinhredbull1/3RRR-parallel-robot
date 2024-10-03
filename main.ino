@@ -143,10 +143,41 @@ coordinate Serial_process() {
       int sv_ind = c.substring(0, index_now).toInt();
       angle = c.substring(index_now + 1, index_cal).toFloat();
       microsec = interpolate(deg_to_rad(angle), theta_min[sv_ind], theta_max[sv_ind], m_of_theta_min[sv_ind], m_of_theta_max[sv_ind]);  //interpolates
-     ISR_Servo.setPulseWidth(servoIndex[sv_ind],microsec);
+      ISR_Servo.setPulseWidth(servoIndex[sv_ind],microsec);
     }
   }
   return result;
+}
+void Get_uart()
+{
+  String str="";
+  bool get_ter=0;
+  while(Serial.available())
+  {
+    char c = Serial.read();
+    if(c==';')
+    {
+      get_ter=1;
+      break;
+    }
+    str+=c;
+  }
+  if(get_ter)
+  {
+    Serial.println(str);
+     int index_now = c.indexOf("/");
+    if (index_now != -1) {
+      coordinate result;
+      int index_cal = c.indexOf("#");
+      result.x = c.substring(0, index_now).toFloat();
+      result.y = c.substring(index_now + 1, index_cal).toFloat();
+      result.theta = c.substring(index_cal + 1).toFloat();
+      result.x/=100.0;
+      result.y/=100.0;
+      PRINT_SERIAL_COMMA(result.x, result.y, result.theta);
+      // InvKinRRR(result.x, result.y, deg_to_rad(result.theta));
+    }
+  }
 }
 void setup() {
   Serial.begin(9600);
@@ -175,29 +206,9 @@ void loop() {
   //   py = 0.015 * sin(theta_r);
   //   //calculates q1, q2, and q3 given px, py, and theta
   //   InvKinRRR(px, py, 0);
-
   // }
-
-
-
-  //defines epicycloid parameters
-  float r = 0.005;
-  float k = 2.1;
-  int count_ = 0;
-
   unsigned long time_ = millis();
   int m[3];
-  run_every(5) {
-    //defines desired x and y position of robot
-    theta_r += M_PI / 1440.0;
-    if (theta_r >= 44 * M_PI) {
-      theta_r = 0;
-      Serial.println("done");
-    }
-    px = r * (k + 1) * cos(theta_r) - r * cos((k + 1) * theta_r);
-    py = r * (k + 1) * sin(theta_r) - r * sin((k + 1) * theta_r);
-    InvKinRRR(px, py, 0);
-  }
 
 
   //   Serial.println(theta_r);
