@@ -8,12 +8,13 @@ import threading
 import time
 import csv
 import math
-
+import serial
 # Sử dụng TkAgg làm backend cho matplotlib
 matplotlib.use("TkAgg")
 
 class TrajectoryApp:
     def __init__(self, root):
+        self.ser=serial.Serial('/dev/ttyUSB0',57600)
         self.root = root
         self.root.title("Trajectory Tracker")
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -90,7 +91,9 @@ class TrajectoryApp:
         self.trajectory_y = []
         self.loaded_trajectory_x = []
         self.loaded_trajectory_y = []
-
+    def send_serial(self,x,y,theta):
+        str_send=str(x)+"/"+str(y)+"#"+str(theta)+";"
+        self.ser.write(str_send.encode())
     def start_tracking(self):
         # Lấy giá trị x và y từ ô nhập liệu
         try:
@@ -108,9 +111,10 @@ class TrajectoryApp:
         with self.lock:
             self.target_x = x
             self.target_y = y
+            self.send_serial(x,y,0)
             self.trajectory_x = []
             self.trajectory_y = []
-
+            
         self.ax_dynamic.cla()
         self.ax_dynamic.grid(True)
 
@@ -128,6 +132,9 @@ class TrajectoryApp:
         servo1_angle = math.atan2(y, x)
         servo2_angle = math.atan2(y, x + 1)
         servo3_angle = math.atan2(y, x - 1)
+        if self.ser.in_waiting > 0:
+            data = self.ser.readline().decode().strip()  # Đọc dữ liệu từ Serial và loại bỏ ký tự xuống dòng
+            print(data)
         return servo1_angle * 180 / math.pi, servo2_angle * 180 / math.pi, servo3_angle * 180 / math.pi
     def stop_tracking(self):
         self.tracking = False
@@ -137,6 +144,7 @@ class TrajectoryApp:
 
     def update_position(self):
         while self.tracking:
+           
             with self.lock:
                 # Sử dụng thuật toán Bresenham để xấp xỉ đường thẳng từ vị trí hiện tại đến vị trí nhập vào
                 points = self.bresenham(self.x, self.y, self.target_x, self.target_y)
@@ -148,7 +156,7 @@ class TrajectoryApp:
                     self.x, self.y = point
                     self.trajectory_x.append(self.x)
                     self.trajectory_y.append(self.y)
-                
+                    self.send_serial(self.x,self.y,0)
                 servo_angles = self.calculate_inverse_kinematics(self.x, self.y)
                 self.servo1_angle.config(text=f"{servo_angles[0]:.2f}")
                 self.servo2_angle.config(text=f"{servo_angles[1]:.2f}")

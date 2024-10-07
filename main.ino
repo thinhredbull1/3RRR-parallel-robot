@@ -132,55 +132,24 @@ coordinate Serial_process() {
     int index_now = c.indexOf("/");
     if (index_now != -1) {
       int index_cal = c.indexOf("#");
-      // result.x = c.substring(0, index_now).toFloat();
-      // result.y = c.substring(index_now + 1, index_cal).toFloat();
-      // result.theta = c.substring(index_cal + 1).toFloat();
+      result.x = c.substring(0, index_now).toFloat();
+      result.y = c.substring(index_now + 1, index_cal).toFloat();
+      result.theta = c.substring(index_cal + 1).toFloat();
       // Serial.print("coord:");
-      // PRINT_SERIAL_COMMA(result.x, result.y, result.theta);
+      PRINT_SERIAL_COMMA(result.x, result.y, result.theta);
       // Serial.print("angle:");
-      // InvKinRRR(result.x, result.y, deg_to_rad(result.theta));
+      InvKinRRR(result.x, result.y, deg_to_rad(result.theta));
       // PRINT_SERIAL_COMMA(target[0], target[1], target[2]);
-      int sv_ind = c.substring(0, index_now).toInt();
-      angle = c.substring(index_now + 1, index_cal).toFloat();
-      microsec = interpolate(deg_to_rad(angle), theta_min[sv_ind], theta_max[sv_ind], m_of_theta_min[sv_ind], m_of_theta_max[sv_ind]);  //interpolates
-      ISR_Servo.setPulseWidth(servoIndex[sv_ind],microsec);
+      // int sv_ind = c.substring(0, index_now).toInt();
+      // angle = c.substring(index_now + 1, index_cal).toFloat();
+      // microsec = interpolate(deg_to_rad(angle), theta_min[sv_ind], theta_max[sv_ind], m_of_theta_min[sv_ind], m_of_theta_max[sv_ind]);  //interpolates
+      // ISR_Servo.setPulseWidth(servoIndex[sv_ind],microsec);
     }
   }
   return result;
 }
-void Get_uart()
-{
-  String str="";
-  bool get_ter=0;
-  while(Serial.available())
-  {
-    char c = Serial.read();
-    if(c==';')
-    {
-      get_ter=1;
-      break;
-    }
-    str+=c;
-  }
-  if(get_ter)
-  {
-    Serial.println(str);
-     int index_now = c.indexOf("/");
-    if (index_now != -1) {
-      coordinate result;
-      int index_cal = c.indexOf("#");
-      result.x = c.substring(0, index_now).toFloat();
-      result.y = c.substring(index_now + 1, index_cal).toFloat();
-      result.theta = c.substring(index_cal + 1).toFloat();
-      result.x/=100.0;
-      result.y/=100.0;
-      PRINT_SERIAL_COMMA(result.x, result.y, result.theta);
-      // InvKinRRR(result.x, result.y, deg_to_rad(result.theta));
-    }
-  }
-}
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(57600);
   // myservo[0].attach(D4, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
   // myservo[1].attach(D5, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
   // myservo[2].attach(D6, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
@@ -194,6 +163,7 @@ void setup() {
     target[i] = InitialPosition[i];
     home_offset_angle[i] = origin_servo_angle[i] - deg_to_rad(InitialPosition[i]);
   }
+  Serial.setTimeout(10);
 }
 void loop() {
   // Serial_process();
