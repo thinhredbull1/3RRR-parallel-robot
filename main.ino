@@ -1,6 +1,7 @@
 
 #include "config.h"
 #include "ESP8266_ISR_Servo.h"
+#include <Eigen/Dense>
 int servoIndex[3];
 double px = 0.0;
 double py = 0.0;
@@ -72,14 +73,56 @@ void MoveServos() {
     //Serial.println("servo[" + String(servo) + "]:" + String(p[servo]));
   }
 }
+void ForwardRRR(double q0, double q1, double q2, double theta) {
+
+    // Tính toán tọa độ e1, e2, e3
+    double e1x = b1x + L1 * cos(q0);
+    double e1y = b1y + L1 * sin(q0);
+
+    double e2x = b2x + L1 * cos(q1);
+    double e2y = b2y + L1 * sin(q1);
+
+    double e3x = b3x + L1 * cos(q2);
+    double e3y = b3y + L1 * sin(q2);
+
+    // Tính các cos và sin của theta và a_angles
+    double cos_1 = rp[0] * cos(theta + a_angles[0]);
+    double cos_2 = rp[0] * cos(theta + a_angles[1]);
+    double cos_3 = rp[0] * cos(theta + a_angles[2]);
+
+    double sin_1 = rp[0] * sin(theta + a_angles[0]);
+    double sin_2 = rp[0] * sin(theta + a_angles[1]);
+    double sin_3 = rp[0] * sin(theta + a_angles[2]);
+
+    // Tính các giá trị G1, G2, G3, G4, G5, G6
+    double G1 = 2 * cos_2 - 2 * e2x - 2 * cos_1 + 2 * e1x;
+    double G2 = 2 * e1y - 2 * e2y + 2 * sin_2 - 2 * sin_1;
+    double G3 = (e2x * e2x + e2y * e2y) - (e1x * e1x + e1y * e1y) + (2 * e1x * cos_1 - 2 * e2x * cos_2) + (2 * e1y * sin_1 - 2 * e2y * sin_2);
+
+    double G4 = (2 * e1x) - (2 * e3x) + (2 * cos_3) - (2 * cos_1);
+    double G5 = (2 * e1y) - (2 * e3y) + (2 * sin_3) - (2 * sin_1);
+    double G6 = (e3x * e3x + e3y * e3y) - (e1x * e1x + e1y * e1y) + (2 * e1x * cos_1 - 2 * e3x * cos_3) + (2 * e1y * sin_1 - 2 * e3y * sin_3);
+
+    // Ma trận V và vector W
+    Matrix2d V;
+    V(0, 0) = G1;
+    V(0, 1) = G2;
+    V(1, 0) = G4;
+    V(1, 1) = G5;
+
+    Vector2d W;
+    W(0) = -G3;
+    W(1) = -G6;
+
+    // Giải hệ phương trình V * F = W để tìm F
+    Vector2d F = V.colPivHouseholderQr().solve(W);
+
+    double cx = F(0);
+    double cy = F(1);
+}
 void InvKinRRR(double px, double py, double theta) {
-  double b1x = rb * cos(-M_PI / 6);
-  double b1y = rb * sin(-M_PI / 6);
-  double b2x = 0;
-  double b2y = rb;
-  double b3x = rb * cos(7 * M_PI / 6);
-  double b3y = rb * sin(7 * M_PI / 6);
-  double a_angles[3] = { -M_PI / 6, M_PI / 2, 7 * M_PI / 6 };
+
+
   double a1x = px + rp[0] * cos(theta + a_angles[0]);
   double a1y = py + rp[0] * sin(theta + a_angles[0]);
   double a2x = px + rp[1] * cos(theta + a_angles[1]);

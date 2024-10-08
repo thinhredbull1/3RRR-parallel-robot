@@ -23,7 +23,7 @@ def unwrap(theta):
 # Hàm chuyển đổi từ radian sang độ
 def rad_to_deg(theta):
     return theta * 180 / math.pi
-def ForwardRRR(q0,q1,q2,theta,x,y):
+def ForwardRRR(q0,q1,q2,theta):
     e1x = b1x + L1 * np.cos(q0)
     e1y = b1y + L1 * np.sin(q0)
 
@@ -32,28 +32,25 @@ def ForwardRRR(q0,q1,q2,theta,x,y):
 
     e3x = b3x + L1 * np.cos(q2)
     e3y = b3y + L1 * np.sin(q2)
-    le1=((e1x-x)**2+(e1y-y)**2)
-    Le1=(L2**2+rp_**2)
-    print(le1)
-    print(Le1)
-    theta=math.acos((le1-Le1)/(2*L2*rp_))
-    print(rad_to_deg(theta))
-    print(rad_to_deg(q0+a_angles[0]))
-    Le2=(L2**2+rp_**2-2*L2*rp_*math.cos(theta-a_angles[1]))
-    Le3=(L2**2+rp_**2-2*L2*rp_*math.cos(theta-a_angles[2]))
     # print(Le1)
     # print(Le2)
-    G1 = (2 * e1x) - (2 * e2x)
-    G2 = (2 * e1y) - (2 * e2y)
-    G3 = (e2x**2 + e2y**2) - (e1x**2 + e1y**2)
+    cos_1=rp[0] * math.cos(theta + a_angles[0])
+    cos_2=rp[0] * math.cos(theta + a_angles[1])
+    cos_3=rp[0] * math.cos(theta + a_angles[2])
+    sin_1=rp[0] * math.sin(theta + a_angles[0])
+    sin_2=rp[0] * math.sin(theta + a_angles[1])
+    sin_3=rp[0] * math.sin(theta + a_angles[2])
+    G1 = 2*cos_2-2*e2x-2*cos_1+2*e1x
+    G2 = 2*e1y-2*e2y+2*sin_2-2*sin_1
+    G3 = (e2x**2 + e2y**2) - (e1x**2 + e1y**2)+(2*e1x*cos_1-2*e2x*cos_2)+(2*e1y*sin_1-2*e2y*sin_2)
 
-    G4 = (2 * e1x) - (2 * e3x)
-    G5 = (2 * e1y) - (2 * e3y)
-    G6 = (e3x**2 + e3y**2) - (e1x**2 + e1y**2)
+    G4 = (2 * e1x) - (2 * e3x)+(2*cos_3)-(2*cos_1)
+    G5 = (2 * e1y) - (2 * e3y) +(2*sin_3)-(2*sin_1)
+    G6 = (e3x**2 + e3y**2) - (e1x**2 + e1y**2)+(2*e1x*cos_1-2*e3x*cos_3)+(2*e1y*sin_1-2*e3y*sin_3)
 
     # Ma trận V và vector W
     V = np.array([[G1, G2], [G4, G5]])
-    W = np.array([Le2-Le1-G3,Le3-Le1-G6])   
+    W = np.array([-G3,-G6])   
 
     # Giải hệ phương trình để tìm tọa độ end-effector
     F = np.linalg.solve(V, W)
@@ -120,12 +117,12 @@ def InvKinRRR(px, py, theta):
         return None
 
 # Ví dụ sử dụng hàm InvKinRRR
-px = 0.0
-py = 0.0
-theta = math.radians(0)
+px = 0.04
+py = 0.015
+theta = math.radians(3)
 result = InvKinRRR(px, py, theta)
-x,y=ForwardRRR(result[0],result[1],result[2],0,0,0)
-# print(x)
-# print(y)
+x,y=ForwardRRR(result[0],result[1],result[2],theta)
+print(x)
+print(y)
 if result is not None:
     print("Góc các servo:", result)

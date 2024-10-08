@@ -38,7 +38,13 @@ const float InitialPosition[NumServos] = {
   38
 };
 const float origin_servo_angle[3]={deg_to_rad(99.63),deg_to_rad(99.63),deg_to_rad(99.63)};
-
+double b1x = rb * cos(-M_PI / 6);
+double b1y = rb * sin(-M_PI / 6);
+double b2x = 0;
+double b2y = rb;
+double b3x = rb * cos(7 * M_PI / 6);
+double b3y = rb * sin(7 * M_PI / 6);
+double a_angles[3] = { -M_PI / 6, M_PI / 2, 7 * M_PI / 6 };
 struct coordinate{
     float x;
     float y;
