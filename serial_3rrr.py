@@ -170,7 +170,7 @@ class TrajectoryApp:
         input_frame = ttk.Frame(root, padding="10")
         input_frame.grid(row=0, column=0, sticky="W")
         self.clear_button = ttk.Button(input_frame, text="Clear", command=self.clear_plot)
-        self.clear_button.grid(row=0, column=9, padx=10, pady=5)
+        self.clear_button.grid(row=0, column=10, padx=10, pady=5)
         # Nhãn và ô nhập cho x
         ttk.Label(input_frame, text="X:").grid(row=0, column=0, padx=5, pady=5, sticky="E")
         self.x_entry = ttk.Entry(input_frame, width=10)
@@ -191,8 +191,10 @@ class TrajectoryApp:
         # Nút Load Trajectory
         self.load_button = ttk.Button(input_frame, text="Load circle", command=self.load_circle)
         self.load_button2 = ttk.Button(input_frame, text="Load SQUARE", command=self.load_square)
+        self.load_button3 = ttk.Button(input_frame, text="Load Eclyp", command=self.load_eclyp)
         self.load_button.grid(row=0, column=7, padx=10, pady=5)
         self.load_button2.grid(row=0, column=8, padx=10, pady=5)
+        self.load_button3.grid(row=0, column=9, padx=10, pady=5)
         angle_frame = ttk.Frame(root, padding="10")
         angle_frame.grid(row=2, column=0, sticky="W")
         ttk.Label(angle_frame, text="Current X:").grid(row=3, column=0, padx=5, pady=5, sticky="E")
@@ -326,7 +328,7 @@ class TrajectoryApp:
 
         self.start_button.config(state='disabled')
         self.stop_button = ttk.Button(self.root, text="Stop", command=self.stop_tracking)
-        self.stop_button.grid(row=0, column=10, padx=10, pady=5)
+        self.stop_button.grid(row=0, column=11, padx=10, pady=5)
 
         self.tracking = True
         self.thread = threading.Thread(target=self.update_position)
@@ -386,15 +388,7 @@ class TrajectoryApp:
         K = 45
         l1 = 142
         l2 = 120
-        R = 45
-        rb=185
-        b1x = rb * math.cos(-math.pi / 6)
-        b1y = rb * math.sin(-math.pi / 6)
-        b2x = 0
-        b2y = rb
-        b3x = rb * math.cos(7 * math.pi / 6)
-        b3y = rb * math.sin(7 * math.pi / 6)
-        # Vị trí của các actuator
+        R = 0
         xA = K * np.cos(np.pi / 6)
         yA = K * np.sin(np.pi / 6)
         p1 = create_circle((b1x, b1y), l1 + l2 + R)
@@ -456,6 +450,39 @@ class TrajectoryApp:
             self.loaded_trajectory_y = y
 
             # self.velocity = velocities
+        # Vẽ quỹ đạo đã tải trên biểu đồ thứ hai
+        self.ax_loaded.cla()
+        self.ax_loaded.set_title("Loaded Trajectory")
+        self.ax_loaded.set_xlabel("X")
+        self.ax_loaded.set_ylabel("Y")
+        self.ax_loaded.grid(True)
+        self.ax_loaded.plot(self.loaded_trajectory_x, self.loaded_trajectory_y, '-',
+                            color='red')
+        self.draw_workspace()
+        self.canvas.draw()
+    def load_eclyp(self):
+        try:
+            radius = float(self.radius_entry.get())
+        except ValueError:
+            messagebox.showerror("Input Error", "Radius not filled")
+            return
+        k=2.1
+        self.square=0
+        self.circle=1
+        num_points=100
+        # self.angle=0
+        x = []
+        y = []
+        for i in np.arange(0,44*math.pi,math.pi/1440):
+            px =  radius*(k + 1)*math.cos(i) - radius*math.cos((k + 1)*i)
+            py = radius*(k + 1)*math.sin(i) - radius*math.sin((k + 1)*i)
+            x.append(px)
+            y.append(py)
+        # loaded_x, loaded_y, velocities = trapezoidal_profile_circle(10, 10, num_points) #radius time point
+        with self.lock:
+            self.loaded_trajectory_x = x
+            self.loaded_trajectory_y = y
+            # self.velocity=velocities
         # Vẽ quỹ đạo đã tải trên biểu đồ thứ hai
         self.ax_loaded.cla()
         self.ax_loaded.set_title("Loaded Trajectory")
