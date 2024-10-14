@@ -69,7 +69,7 @@ def InvKinRRR(px, py, theta):
     beta_sing_3 = math.acos((L1 ** 2 + L2 ** 2 - a3b3 ** 2) / (2 * L1 * L2))
     # print(rad_to_deg(beta_sing_2))
     if(beta_sing_1<limit_angle_beta or beta_sing_2<limit_angle_beta or beta_sing_3<limit_angle_beta):
-        print("singularity")
+        print("singularity in x:"+str(px) +" with y:"+str(py))
     # print("beta:")
     # print(rad_to_deg(beta_sing_1))
     # print(rad_to_deg(beta_sing_2))
@@ -161,6 +161,11 @@ class TrajectoryApp:
         self.radius = 50 
         # self.ser = serial.Serial('COM10', 57600)  # Thay 'COM1' bằng cổng Serial của bạn và baudrate phù hợp
         self.root.title("Trajectory Tracker")
+        # print("x check")
+        # for i in range(-50,80,5):
+        #     InvKinRRR(i,0,math.radians(self.angle))
+        # for i in range(-50,50,5):
+        #     InvKinRRR(0,i,math.radians(self.angle))
         InvKinRRR(0, 0, math.radians(self.angle))
         self.send_serial(target[0], target[1], target[2])
         time.sleep(0.1)
@@ -402,7 +407,28 @@ class TrajectoryApp:
         workspace = workspace.difference(p2).difference(p4).difference(p6)
         workspace_x,workspace_y=workspace.exterior.xy
         # Vẽ workspace lên biểu đồ ax_loaded
+        x_min=-45
+        x_max=50
+        y_min=-50
+        y_max=35
+        x=[x_min,x_min]
+        y=[-150,150]
         self.ax_loaded.plot(workspace_x, workspace_y, 'g--', label='Workspace', alpha=0.5)
+        self.ax_loaded.plot(x,y, color='r', linestyle='-', label='x = -45')  # Đường thẳng tại x = -45
+        x=[x_max,x_max]
+        y=[-150,150]
+        self.ax_loaded.plot(x,y, color='r', linestyle='-')  # Đường thẳng tại x = -45
+        x=[-100,100]
+        y=[y_min,y_min]
+        self.ax_loaded.plot(x,y, color='r', linestyle='-')  # Đường thẳng tại x = -45
+        x=[-100,100]
+        y=[y_max,y_max]
+        self.ax_loaded.plot(x,y, color='r', linestyle='-')  # Đường thẳng tại x = -45
+        # self.ax_loaded.plot(x,workspace_y, color='r', linestyle='-', label='x = 50')  # Đường thẳng tại x = -45
+        # self.ax_loaded.axvline(x=50, color='b', linestyle='-', label='x = 50')    # Đường thẳng tại x = 50
+        # self.ax_loaded.axhline(y=-50, color='m', linestyle='-', label='y = -50')  # Đường thẳng tại y = -50
+        # self.ax_loaded.axhline(y=35, color='c', linestyle='-', label='y = 35')    # Đường thẳng tại y = 35
+
     def plot_dynamic_trajectory(self, x_data, y_data):
         """Vẽ lại quỹ đạo động, không xóa quỹ đạo cũ."""
         # self.ax_dynamic.cla()
